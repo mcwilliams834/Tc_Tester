@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.4">
+  <POU Name="FB_ScaleAnalogoutput" Id="{6896b27a-a650-4009-a72b-a1778e874a78}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ScaleAnalogoutput
+VAR_INPUT
+	///Engineering Units Input
+	fInput: LREAL;
+	///Min 'Engineering Units' can be
+	fInputMin: LREAL;
+	///Max 'Engineering Units' can be (analog will be 32768)
+	fInputMax: LREAL;
+	///Analog value MIN (DEC 16 bit)
+	fOutputMin: INT;
+	///Analog value MAX (DEC 16 bit)
+	fOutputMax: INT;
+END_VAR
+VAR_OUTPUT
+	///Scaled value to be sent to Analog module (EL4xxx)
+	nOutput: INT;
+END_VAR
+VAR
+	///Internal var
+	fTemp: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF fInput >fInputMax THEN
+	nOutput := fOutputMax;
+ELSIF fInput < fOutputMin THEN
+	nOutput := fOutputMin;
+ELSE
+	nOutput := LREAL_TO_INT( (fInput - fInputMin)*(fOutputMax - fOutputMin)/(fInputMax - fInputMin) + fOutputMin);
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_ScaleAnalogoutput">
+      <LineId Id="3" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.4">
+  <POU Name="MAIN" Id="{f55654e8-ba50-4679-b5cf-b3d0778d83b0}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	stEventArray	: ARRAY[0..iNumEvents] OF ST_Event;
+	
+	
+	bEstop			: BOOL :=TRUE;
+	{attribute 'OPC.UA.DA' := '1'}
+	bRun			: BOOL;
+	{attribute 'TcAnalytics'}
+	{attribute 'OPC.UA.DA' := '1'}
+	rRealVal		: REAL;  //Process Value
+	{attribute 'TcAnalytics'}
+	bHeater			: BOOL;
+	
+	fbTON			: TON;
+	{attribute 'TcAnalytics'}
+	{attribute 'OPC.UA.DA' := '1'}
+	bGoodCpk		: BOOL :=TRUE;
+	lrRandom		: LREAL;
+	iTmrPreset		: INT :=1000;
+	iTmrET			: INT;
+	fbDRAND			: DRAND;	
+	rDutyCycle		: REAL :=50;
+
+	sState			: STRING;
+	sPrevState		: STRING;
+	
+	// date/time vars
+    fbGetSystemTime  	: GETSYSTEMTIME;
+    fileTimeUTC         : T_FILETIME;
+    sDateTimeUTC        : STRING[32];
+
+    fileTimeLocal       : T_FILETIME;
+	systemTimeLocal		: TIMESTRUCT;
+	sDateTimeLocal		: STRING[32];
+	
+	ulSysTime			: ULINT;
+
+	myTime: DATE_AND_TIME;
+	myTime2: TIME;
+	myTime3: LTIME;
+END_VAR
+
+VAR CONSTANT
+	iNumEvents: UINT := 99;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bEstop THEN
+	bRun := FALSE;
+	rRealVal := 50.0;
+	bHeater := FALSE;
+ELSE
+	// run virtual machine
+	IF bRun THEN
+		fbDRAND(Seed:= iTmrET, Num=> lrRandom);
+				
+		IF bGoodCpk THEN
+			rRealVal := 50 + 10 *(LREAL_TO_REAL(lrRandom)-0.5);
+		ELSE
+			rRealVal := rRealVal + 2 *(LREAL_TO_REAL(lrRandom)-0.5);
+		END_IF
+	END_IF	
+
+	// Cycle heater based on duty cycle 	
+	fbTON(IN:=NOT fbTON.q , PT:=INT_TO_TIME(iTmrPreset) , Q=> , ET=> );	
+	iTmrET := TIME_TO_INT(fbTON.ET);
+	
+	IF iTmrET < iTmrPreset*rDutyCycle/100 THEN
+		bHeater := TRUE;
+	ELSE
+		bHeater := FALSE;
+	END_IF
+
+
+END_IF
+
+// Call EventLog action
+aEventLog();
+
+]]></ST>
+    </Implementation>
+    <Action Name="aEventLog" Id="{44c1c4a0-45a8-4f4d-8a4c-b8182af57ec2}">
+      <Implementation>
+        <ST><![CDATA[// get timestamp
+fbGetSystemTime(timeLoDW=>fileTimeUTC.dwLowDateTime, timeHiDW=>fileTimeUTC.dwHighDateTime);	// returns UTC time
+sDateTimeUTC := SYSTEMTIME_TO_STRING(FILETIME_TO_SYSTEMTIME(fileTimeUTC));
+
+// adjust for local timezone
+//fileTimeLocal := F_TranslateFileTimeBias(in:= fileTime, bias:= WEST_EUROPE_TZI.bias + WEST_EUROPE_TZI.daylightBias, toUTC:= FALSE);
+fileTimeLocal := F_TranslateFileTimeBias(in:= fileTimeUTC, bias:= 6*60, toUTC:= FALSE);
+systemTimeLocal:=FILETIME_TO_SYSTEMTIME(fileTimeLocal);
+sDateTimeLocal := SYSTEMTIME_TO_STRING(systemTimeLocal);
+
+ulSysTime:=F_GetSystemTime();	// how to convert to string??
+
+//Daymon playtime...
+myTime := ULINT_TO_DT(ulSysTime);
+myTime2 := ULINT_TO_TIME(ulSysTime);
+myTime3 := ULINT_TO_LTIME(ulSysTime);
+
+
+IF bEstop THEN
+	sState := 'E-Stopped';
+ELSE
+	sState := 'Idle';	// default state if no Estop
+	IF bRun THEN
+		sState := 'Running';
+
+		// ALARM - process out of spec - stop
+		IF (rRealVal < 10) OR (rRealVal > 90) THEN
+			bRun := FALSE;
+			sState := 'Stopped - Out of Spec - Low!';
+		END_IF
+		IF (rRealVal > 90) THEN
+			bRun := FALSE;
+			sState := 'Stopped - Out of Spec - Hi!';
+		END_IF
+
+		// WARNING - process Cpk bad - but continue running
+		IF sState = 'Running' THEN
+			IF (rRealVal < 30) THEN
+				sState := 'Running Low - Check Process!';
+			END_IF
+			IF (rRealVal > 70) THEN
+				sState := 'Running High - Check Process!';
+			END_IF
+		END_IF
+	END_IF
+END_IF
+
+(* Manage Event array... *)
+IF sState <> sPrevState THEN	// if state change shift data down and add new event to top
+	MEMMOVE(destAddr:= ADR(stEventArray[1]), srcAddr:= ADR(stEventArray[0]), n:= SIZEOF(stEventArray[0])*iNumEvents);
+
+	(* current event values *)
+	stEventArray[0].sDateTime := sDateTimeLocal;
+	stEventArray[0].sEvent := sState;
+	stEventArray[0].fProcVal := rRealVal;
+	stEventArray[0].bHeaterState := bHeater;
+END_IF
+sPrevState := sState;]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="MAIN">
+      <LineId Id="8" Count="1" />
+      <LineId Id="11" Count="1" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="74" Count="7" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="21" Count="1" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="23" Count="5" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="55" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.aEventLog">
+      <LineId Id="2" Count="1" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="62" Count="1" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="93" Count="1" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="6" Count="2" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="11" Count="10" />
+      <LineId Id="23" Count="8" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="39" Count="4" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="48" Count="4" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

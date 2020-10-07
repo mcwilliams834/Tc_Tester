@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<TcSmItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.10" ClassName="CNestedPlcProjDef">
+	<Project GUID="{7DF7030F-41DE-46D4-B6BD-868C04CE9E7D}" Name="plc1" PrjFilePath="..\..\plc1\plc1.plcproj" TmcFilePath="..\..\plc1\plc1.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
+		<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="plc1\plc1.tmc">
+			<Name>plc1 Instance</Name>
+			<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
+			<Vars VarGrpType="1">
+				<Name>FasterTask Inputs</Name>
+				<Var>
+					<Name>Module1Control.Poti_in</Name>
+					<Type>DINT</Type>
+				</Var>
+			</Vars>
+			<Vars VarGrpType="2">
+				<Name>FasterTask Outputs</Name>
+				<Var>
+					<Name>Module1Control.FB_Cylinder_Right.CylinderOutput</Name>
+					<Type>BOOL</Type>
+				</Var>
+				<Var>
+					<Name>Module1Control.Display</Name>
+					<Type>INT</Type>
+				</Var>
+				<Var>
+					<Name>Module1Control.FB_Cylinder_Left.CylinderOutput</Name>
+					<Type>BOOL</Type>
+				</Var>
+			</Vars>
+			<Contexts>
+				<Context>
+					<Id NeedCalleeCall="true">0</Id>
+					<Name>FasterTask</Name>
+				</Context>
+				<Context>
+					<Id NeedCalleeCall="true">1</Id>
+					<Name>PlcTask</Name>
+					<ManualConfig>
+						<OTCID>#x02010030</OTCID>
+					</ManualConfig>
+					<Priority>1</Priority>
+					<CycleTime>1000000</CycleTime>
+				</Context>
+			</Contexts>
+			<TaskPouOids>
+				<TaskPouOid Prio="1" OTCID="#x08502001"/>
+			</TaskPouOids>
+		</Instance>
+	</Project>
+</TcSmItem>

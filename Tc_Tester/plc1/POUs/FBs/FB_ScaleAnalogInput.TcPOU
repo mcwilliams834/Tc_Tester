@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.4">
+  <POU Name="FB_ScaleAnalogInput" Id="{ce64cd92-ab96-4f24-b8a6-b664824982f2}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ScaleAnalogInput
+VAR_INPUT
+	///Actual value
+	fInput: LREAL;
+	///Min 'actual value' can be
+	fInputMin: LREAL;
+	///Max 'actual value' can be (analog will be 32768)
+	fInputMax: LREAL;
+	///Scaled Units MIN
+	fScaledMin: LREAL;
+	///Scaled Units MAX
+	fScaledMax: LREAL;
+	///Offset shift (if any)
+	fOffset: LREAL;
+END_VAR
+VAR_OUTPUT
+	///Actual value in 'Engineering Units'
+	fOutput: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fOutput := (fInput - fInputMin)*(fScaledMax - fScaledMin)/(fInputMax - fInputMin) + fScaledMin + fOffset;]]></ST>
+    </Implementation>
+    <LineIds Name="FB_ScaleAnalogInput">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

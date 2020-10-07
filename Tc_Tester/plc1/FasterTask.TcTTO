@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.4">
+  <Task Name="FasterTask" Id="{017ffc09-8d40-4b36-955d-df72fc24602b}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>1000</CycleTime>
+    <Priority>1</Priority>
+    <PouCall>
+      <Name>Module1Control</Name>
+    </PouCall>
+    <TaskFBGuid>{bd9355e6-f04a-45d9-84db-82be5f9140ef}</TaskFBGuid>
+    <Fb_init>{8bec94cc-ba97-4bc1-aefb-65f4ebe405cc}</Fb_init>
+    <Fb_exit>{7d9d4e02-7763-4cbf-b748-8887d26df824}</Fb_exit>
+    <CycleUpdate>{15e0cb1c-6c78-4fbc-aa0f-1a9936a0dd1d}</CycleUpdate>
+    <PostCycleUpdate>{587ddc29-495e-49c8-9f45-5dc7571c7a17}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>
